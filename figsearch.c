@@ -18,7 +18,7 @@ typedef struct {
 } bitmap;
 
 typedef struct {
-    bool hline, vline, square;
+    bool test, hline, vline, square;
     FILE *file;
 } config;
 
@@ -75,8 +75,21 @@ void dtor_figsearch(bitmap *bmp, config cfg, result *result) {
 int figsearch(int argc, char *argv[]) {
     const config cfg = parse_args(argc, argv);
     bitmap *bmp = load_bitmap(cfg.file);
+    // If bitmap is not null and test is true print valid and return 0
+    if (bmp != NULL && cfg.test) {
+        printf("Valid\n");
+        dtor_figsearch(bmp, cfg, NULL);
+        return 0;
+    }
+    // If bitmap is null and test is true print invalid and return 1
+    if (bmp == NULL && cfg.test) {
+        printf("Invalid\n");
+        dtor_figsearch(bmp, cfg, NULL);
+        return 1;
+    }
+    // If bitmap is null and test is false print error and return 1
     if (bmp == NULL) {
-        fprintf(stderr, "Error loading bitmap\n");
+        fprintf(stderr, "Not found\n");
         dtor_figsearch(bmp, cfg, NULL);
         return 1;
     }
@@ -106,9 +119,9 @@ int figsearch(int argc, char *argv[]) {
 }
 
 config parse_args(int argc, char *argv[]) {
-    config cfg = {false, false, false, NULL};
-    int POS_METHOD = 1;
-    int POS_FILE = 2;
+    config cfg = {false, false, false, false, NULL};
+    const int POS_METHOD = 1;
+    const int POS_FILE = 2;
 
     // Check if some arguments are provided
     if (argc < 2) {
@@ -123,7 +136,11 @@ config parse_args(int argc, char *argv[]) {
     }
 
     // Parse method
-    if (strcmp(argv[POS_METHOD], "hline") == 0) {
+
+    if (strcmp(argv[POS_METHOD], "test") == 0) {
+        cfg.test = true;
+    }
+    else if (strcmp(argv[POS_METHOD], "hline") == 0) {
         cfg.hline = true;
     } else if (strcmp(argv[POS_METHOD], "vline") == 0) {
         cfg.vline = true;
@@ -132,13 +149,13 @@ config parse_args(int argc, char *argv[]) {
     }
 
     // Check if method was specified
-    if ((cfg.hline + cfg.vline + cfg.square) == 0) {
+    if ((cfg.test + cfg.hline + cfg.vline + cfg.square) == 0) {
         fprintf(stderr, "Error: No method specified.\n");
         exit(EXIT_FAILURE);
     }
 
     // Check if more than one method was specified
-    if ((cfg.hline + cfg.vline + cfg.square) > 1) {
+    if ((cfg.test + cfg.hline + cfg.vline + cfg.square) > 1) {
         fprintf(stderr, "Error: Only one method can be specified.\n");
         exit(EXIT_FAILURE);
     }
@@ -227,12 +244,21 @@ bitmap *load_bitmap(FILE *file) {
             if (value == 1) {
                 is_bitmap_empty = true;
             }
+            if (value != 0 && value != 1) {
+                fprintf(stderr, "Error: Invalid value in bitmap\n");
+                return NULL;
+            }
             bmp->data[i * rows + j] = value;
         }
     }
 
+    // If bitmap is empty return error (bitmap is not in correct format)
     if (!is_bitmap_empty) {
-        fprintf(stderr, "Error: Bitmap is empty\n");
+        return NULL;
+    }
+
+    // If program did not reach end of file return error (bitmap is not in correct format)
+    if (fgetc(file) != EOF) {
         return NULL;
     }
 
