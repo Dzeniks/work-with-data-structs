@@ -88,9 +88,13 @@ const char *HELP_STRING =
 int figsearch(int argc, char *argv[]);
 
 config parse_args(int argc, char *argv[]);
+
 bitmap *load_bitmap(FILE *file);
+
 result *find_hline(bitmap *bmp);
+
 result *find_vline(bitmap *bmp);
+
 result *find_square(bitmap *bmp);
 
 // Call the figsearch function to start the program
@@ -252,7 +256,6 @@ result *find_hline(bitmap *bmp) {
                 length++;
             }
             if (length > longest_row->size) {
-
                 longest_row->size = length;
                 longest_row->start.x = row;
                 longest_row->start.y = col - length + 1;
@@ -298,6 +301,73 @@ result *find_vline(bitmap *bmp) {
     return longest_column;
 }
 
+void print_result(result *res) {
+    printf("%d %d %d %d\n", res->start.x, res->start.y, res->end.x, res->end.y);
+}
+
+// result *find_square(bitmap *bmp);
+
+bool check_if_row_is_ones(bitmap *bmp, int row, int col, int size) {
+    for (int i = 0; i < size; i++) {
+        bool *item = get_item(bmp, row, col + i);
+        if (item == NULL || !*item) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool check_if_col_is_ones(bitmap *bmp, int row, int col, int size) {
+    for (int i = 0; i < size; i++) {
+        bool *item = get_item(bmp, row + i, col);
+        if (item == NULL || !*item) {
+            return false;
+        }
+    }
+    return true;
+}
+
 result *find_square(bitmap *bmp) {
-    return NULL;
+    result *square = malloc(sizeof(result));
+;
+    for (int row = 0; row < bmp->rows; row++) {
+        for (int col = 0; col < bmp->cols; col++) {
+            // Get start item of possible square (Top left corner)
+            bool *start_item = get_item(bmp, row, col);
+
+            // If item is not valid or not 1 continue to next start item
+            if (start_item == NULL || !*start_item) {
+                continue;
+            }
+            // If start item is valid we found first item of possible square
+            int size = 0;
+            // While in bounds search for square
+            while (row + size < bmp->rows && col + size < bmp->cols) {
+                bool *right = get_item(bmp, row + size, col);
+                bool *bottom = get_item(bmp, row, col + size);
+                bool *bottom_right = get_item(bmp, row + size, col + size);
+
+                // Check if all conditions are true to continue to search if not break
+                if (!(right != NULL && *right && bottom != NULL && *bottom)) {
+                    break;
+                }
+
+                // if found possible square right column and bottom row of possible square are valid
+                if (bottom_right != NULL && *bottom_right) {
+                    bool is_valid_right = check_if_col_is_ones(bmp, row, col + size, size + 1);
+                    bool is_valid_bottom = check_if_row_is_ones(bmp, row + size, col, size + 1);
+                    // If valid and size is bigger than current square save it and continue to search
+                    if (is_valid_right && is_valid_bottom && size > square->size) {
+                        square->size = size;
+                        square->start.x = row;
+                        square->start.y = col;
+                        square->end.x = row + size;
+                        square->end.y = col + size;
+                    }
+                }
+                size++;
+            }
+        }
+    }
+    return square;
 }
