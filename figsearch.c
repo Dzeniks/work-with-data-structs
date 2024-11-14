@@ -352,8 +352,8 @@ result *find_square(bitmap *bmp) {
                     break;
                 }
 
-                // if found possible square right column and bottom row of possible square are valid
-                if (bottom_right != NULL && *bottom_right) {
+                // if found possible and bigger square - check right column and bottom row of possible square are valid
+                if (bottom_right != NULL && *bottom_right && size > square->size) {
                     bool is_valid_right = check_if_col_is_ones(bmp, row, col + size, size + 1);
                     bool is_valid_bottom = check_if_row_is_ones(bmp, row + size, col, size + 1);
                     // If valid and size is bigger than current square save it and continue to search
