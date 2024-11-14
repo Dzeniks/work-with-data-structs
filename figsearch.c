@@ -9,11 +9,11 @@ typedef struct {
 
 typedef struct {
     vector start, end;
-    int len;
-} line;
+    int size;
+} result;
 
 typedef struct {
-    int width, height;
+    int rows, cols;
     bool *data;
 } bitmap;
 
@@ -39,11 +39,18 @@ bitmap *ctor_bitmap(int width, int height) {
         return NULL;
     }
 
-    bmp->width = width;
-    bmp->height = height;
+    bmp->rows = width;
+    bmp->cols = height;
     bmp->data = data;
 
     return bmp;
+}
+
+bool *get_item(bitmap *bmp, int x, int y) {
+    if (x < 0 || x >= bmp->rows || y < 0 || y >= bmp->cols) {
+        return NULL;
+    }
+    return &bmp->data[x * bmp->cols + y];
 }
 
 // Destructor for bitmap structure
@@ -81,34 +88,66 @@ const char *HELP_STRING =
 int figsearch(int argc, char *argv[]);
 
 config parse_args(int argc, char *argv[]);
-
 bitmap *load_bitmap(FILE *file);
+result *find_hline(bitmap *bmp);
+result *find_vline(bitmap *bmp);
+result *find_square(bitmap *bmp);
 
 // Call the figsearch function to start the program
 int main(int argc, char *argv[]) {
     return figsearch(argc, argv);
 }
 
-void dtor_figsearch(bitmap *bmp, config cfg) {
+void dtor_figsearch(bitmap *bmp, config cfg, result *result) {
     dtor_bitmap(bmp);
     if (cfg.file != NULL) {
         fclose(cfg.file);
     }
+    free(result);
 }
 
+// run the figsearch function ("program") and return 0 if successful and 1 if not
 int figsearch(int argc, char *argv[]) {
     printf("Hello, World!\n");
     const config cfg = parse_args(argc, argv);
     bitmap *bmp = load_bitmap(cfg.file);
     if (bmp == NULL) {
         fprintf(stderr, "Error loading bitmap\n");
+        dtor_figsearch(bmp, cfg, NULL);
         return 1;
     }
 
-    printf("width: %d, height: %d\n", bmp->width, bmp->height);
+    // TODO: Remove later prints only for debugging
+    // Print bitmap dimensions
+    printf("Bitmap dimensions: %d x %d\n", bmp->rows, bmp->cols);
+    // Print bitmap data
+    for (int row = 0; row < bmp->rows; row++) {
+        for (int col = 0; col < bmp->cols; col++) {
+            bool *item = get_item(bmp, row, col);
+            printf("%d ", *item);
+        }
+        printf("\n");
+    }
+    printf("\n");
 
-    printf("Good bey, World!\n");
-    dtor_figsearch(bmp, cfg);
+    result *result = NULL;
+    if (cfg.hline) {
+        result = find_hline(bmp);
+    } else if (cfg.vline) {
+        result = find_vline(bmp);
+    } else if (cfg.square) {
+        result = find_square(bmp);
+    }
+
+    if (result == NULL) {
+        fprintf(stderr, "Error finding result\n");
+        dtor_figsearch(bmp, cfg, NULL);
+        return 1;
+    }
+
+    printf("%d %d %d %d\n", result->start.x, result->start.y, result->end.x, result->end.y);
+
+    dtor_figsearch(bmp, cfg, result);
     return 0;
 }
 
@@ -176,12 +215,89 @@ bitmap *load_bitmap(FILE *file) {
         return NULL;
     }
 
+    // Read data from file
+    bool is_bitmap_empty = false;
     for (int i = 0; i < cols; i++) {
         for (int j = 0; j < rows; j++) {
             int value;
             fscanf(file, "%d", &value);
+            if (value == 1) {
+                is_bitmap_empty = true;
+            }
             bmp->data[i * rows + j] = value;
         }
     }
+
+    if (!is_bitmap_empty) {
+        fprintf(stderr, "Error: Bitmap is empty\n");
+        return NULL;
+    }
+
     return bmp;
+}
+
+// Find the longest horizontal line in the bitmap
+result *find_hline(bitmap *bmp) {
+    result *longest_row = malloc(sizeof(result));
+    if (longest_row == NULL) {
+        fprintf(stderr, "Error allocating memory\n");
+        return NULL;
+    }
+
+    for (int row = 0; row < bmp->rows; row++) {
+        int length = 0;
+        for (int col = 0; col < bmp->cols; col++) {
+            bool *item = get_item(bmp, row, col);
+            if (item != NULL && *item) {
+                length++;
+            }
+            if (length > longest_row->size) {
+
+                longest_row->size = length;
+                longest_row->start.x = row;
+                longest_row->start.y = col - length + 1;
+                longest_row->end.x = row;
+                longest_row->end.y = col;
+            }
+            if (item == NULL || !*item) {
+                length = 0;
+            }
+        }
+    }
+    return longest_row;
+}
+
+// Find the longest vertical line in the bitmap
+result *find_vline(bitmap *bmp) {
+    result *longest_column = malloc(sizeof(result));
+    if (longest_column == NULL) {
+        fprintf(stderr, "Error allocating memory\n");
+        free(longest_column);
+        return NULL;
+    }
+
+    for (int col = 0; col < bmp->cols; col++) {
+        int length = 0;
+        for (int row = 0; row < bmp->rows; row++) {
+            bool *item = get_item(bmp, row, col);
+            if (item != NULL && *item) {
+                length++;
+            }
+            if (length > longest_column->size) {
+                longest_column->size = length;
+                longest_column->start.x = row - length + 1;
+                longest_column->start.y = col;
+                longest_column->end.x = row;
+                longest_column->end.y = col;
+            }
+            if (item == NULL || !*item) {
+                length = 0;
+            }
+        }
+    }
+    return longest_column;
+}
+
+result *find_square(bitmap *bmp) {
+    return NULL;
 }

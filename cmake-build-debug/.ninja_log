@@ -1,18 +1,10 @@
 # ninja log v6
+28	39	1731586509417590609	work_with_data_structs	b01c2fb60e3df8fc
+0	28	1731586509389590111	CMakeFiles/work_with_data_structs.dir/figsearch.c.o	d0f3f197584309b7
 0	14	1731575259487896004	build.ninja	45056947e3ff7bc7
-1	14	1731574679073872897	CMakeFiles/work_with_data_structs.dir/figsearch.c.o	d0f3f197584309b7
-14	25	1731574679086873064	work_with_data_structs	b01c2fb60e3df8fc
-0	22	1731577358058463979	CMakeFiles/work_with_data_structs.dir/figsearch.c.o	d0f3f197584309b7
-22	36	1731577358080464586	work_with_data_structs	b01c2fb60e3df8fc
-0	18	1731577384771193994	CMakeFiles/work_with_data_structs.dir/figsearch.c.o	d0f3f197584309b7
-18	30	1731577384789194481	work_with_data_structs	b01c2fb60e3df8fc
-1	23	1731577900069088497	CMakeFiles/work_with_data_structs.dir/figsearch.c.o	d0f3f197584309b7
-23	34	1731577900091088942	work_with_data_structs	b01c2fb60e3df8fc
-0	23	1731577921622523086	CMakeFiles/work_with_data_structs.dir/figsearch.c.o	d0f3f197584309b7
-23	34	1731577921644523528	work_with_data_structs	b01c2fb60e3df8fc
-0	22	1731577955069190767	CMakeFiles/work_with_data_structs.dir/figsearch.c.o	d0f3f197584309b7
-22	33	1731577955091191204	work_with_data_structs	b01c2fb60e3df8fc
-1	23	1731577975500594822	CMakeFiles/work_with_data_structs.dir/figsearch.c.o	d0f3f197584309b7
-23	35	1731577975522595256	work_with_data_structs	b01c2fb60e3df8fc
-0	19	1731578049117028634	CMakeFiles/work_with_data_structs.dir/figsearch.c.o	d0f3f197584309b7
-19	30	1731578049136028999	work_with_data_structs	b01c2fb60e3df8fc
+1	28	1731586569505661046	CMakeFiles/work_with_data_structs.dir/figsearch.c.o	d0f3f197584309b7
+28	39	1731586569532661526	work_with_data_structs	b01c2fb60e3df8fc
+0	26	1731586627065686581	CMakeFiles/work_with_data_structs.dir/figsearch.c.o	d0f3f197584309b7
+26	37	1731586627091687044	work_with_data_structs	b01c2fb60e3df8fc
+0	25	1731586945102355184	CMakeFiles/work_with_data_structs.dir/figsearch.c.o	d0f3f197584309b7
+25	36	1731586945127355629	work_with_data_structs	b01c2fb60e3df8fc
