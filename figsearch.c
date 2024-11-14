@@ -305,8 +305,6 @@ void print_result(result *res) {
     printf("%d %d %d %d\n", res->start.x, res->start.y, res->end.x, res->end.y);
 }
 
-// result *find_square(bitmap *bmp);
-
 bool check_if_row_is_ones(bitmap *bmp, int row, int col, int size) {
     for (int i = 0; i < size; i++) {
         bool *item = get_item(bmp, row, col + i);
@@ -331,8 +329,7 @@ result *find_square(bitmap *bmp) {
     result *square = malloc(sizeof(result));
 
     // Set initial size to -1
-    square->size = -1
-;
+    square->size = -1;
     for (int row = 0; row < bmp->rows; row++) {
         for (int col = 0; col < bmp->cols; col++) {
             // Get start item of possible square (Top left corner)
