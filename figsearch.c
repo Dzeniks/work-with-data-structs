@@ -23,22 +23,32 @@ typedef struct {
 } config;
 
 const char *HELP_STRING =
-"Usage: [method] [filename]\n"
-"\n"
-"Methods:\n"
-"  hline    Find horizontal lines in the input image\n"
-"  vline    Find vertical lines in the input image\n"
-"  square   Find squares in the input image\n"
-"\n"
-"Arguments:\n"
-"  method      Processing method (hline, vline, or square)\n"
-"  filename    Path to input bitmap file in txt format\n"
-"\n"
-"Options:\n"
-"  --help    Display this help message\n"
-"\n"
-"Example:\n"
-"  hline img.txt    # Find horizontal lines in img.txt\n";
+        "Usage: [method] [filename]\n"
+        "\n"
+        "Methods:\n"
+        "  hline    Find horizontal lines in the input image\n"
+        "  vline    Find vertical lines in the input image\n"
+        "  square   Find squares in the input image\n"
+        "\n"
+        "Arguments:\n"
+        "  method      Processing method (hline, vline, or square)\n"
+        "  filename    Path to input bitmap file in txt format\n"
+        "\n"
+        "Options:\n"
+        "  --help    Display this help message\n"
+        "\n"
+        "Example:\n"
+        "  hline img.txt    # Find horizontal lines in img.txt\n";
+
+config parse_args(int argc, char *argv[]);
+
+int main(int argc, char *argv[]) {
+    printf("Hello, World!\n");
+    config cfg = parse_args(argc, argv);
+    printf(cfg.hline ? "hline\n" : "");
+    printf("Good bey, World!\n");
+    return 0;
+}
 
 config parse_args(int argc, char *argv[]) {
     config cfg = {false, false, false, NULL};
@@ -86,12 +96,4 @@ config parse_args(int argc, char *argv[]) {
     }
     cfg.file = file;
     return cfg;
-}
-
-int main(int argc, char *argv[]) {
-    printf("Hello, World!\n");
-    config cfg = parse_args(argc, argv);
-    printf(cfg.hline ? "hline\n" : "");
-    printf("Good bey, World!\n");
-    return 0;
 }
