@@ -329,6 +329,9 @@ bool check_if_col_is_ones(bitmap *bmp, int row, int col, int size) {
 
 result *find_square(bitmap *bmp) {
     result *square = malloc(sizeof(result));
+
+    // Set initial size to -1
+    square->size = -1
 ;
     for (int row = 0; row < bmp->rows; row++) {
         for (int col = 0; col < bmp->cols; col++) {
