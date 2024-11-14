@@ -22,6 +22,43 @@ typedef struct {
     FILE *file;
 } config;
 
+// Constructor for bitmap structure
+bitmap *ctor_bitmap(int width, int height) {
+    if (width <= 0 || height <= 0) {
+        return NULL;
+    }
+
+    bitmap *bmp = malloc(sizeof(bitmap));
+    if (bmp == NULL) {
+        return NULL;
+    }
+
+    bool *data = malloc(width * height * sizeof(bool));
+    if (data == NULL) {
+        free(bmp);
+        return NULL;
+    }
+
+    bmp->width = width;
+    bmp->height = height;
+    bmp->data = data;
+
+    return bmp;
+}
+
+// Destructor for bitmap structure
+void dtor_bitmap(bitmap *bmp) {
+    if (bmp == NULL) {
+        return;
+    }
+
+    if (bmp->data != NULL) {
+        free(bmp->data);
+        bmp->data = NULL;
+    }
+    free(bmp);
+}
+
 const char *HELP_STRING =
         "Usage: [method] [filename]\n"
         "\n"
@@ -40,13 +77,38 @@ const char *HELP_STRING =
         "Example:\n"
         "  hline img.txt    # Find horizontal lines in img.txt\n";
 
+// run the figsearch function ("program")
+int figsearch(int argc, char *argv[]);
+
 config parse_args(int argc, char *argv[]);
 
+bitmap *load_bitmap(FILE *file);
+
+// Call the figsearch function to start the program
 int main(int argc, char *argv[]) {
+    return figsearch(argc, argv);
+}
+
+void dtor_figsearch(bitmap *bmp, config cfg) {
+    dtor_bitmap(bmp);
+    if (cfg.file != NULL) {
+        fclose(cfg.file);
+    }
+}
+
+int figsearch(int argc, char *argv[]) {
     printf("Hello, World!\n");
-    config cfg = parse_args(argc, argv);
-    printf(cfg.hline ? "hline\n" : "");
+    const config cfg = parse_args(argc, argv);
+    bitmap *bmp = load_bitmap(cfg.file);
+    if (bmp == NULL) {
+        fprintf(stderr, "Error loading bitmap\n");
+        return 1;
+    }
+
+    printf("width: %d, height: %d\n", bmp->width, bmp->height);
+
     printf("Good bey, World!\n");
+    dtor_figsearch(bmp, cfg);
     return 0;
 }
 
@@ -96,4 +158,30 @@ config parse_args(int argc, char *argv[]) {
     }
     cfg.file = file;
     return cfg;
+}
+
+// Read bitmap from file
+bitmap *load_bitmap(FILE *file) {
+    // Read dimensions from first line
+    int rows, cols;
+    if (fscanf(file, "%d %d", &rows, &cols) != 2) {
+        fprintf(stderr, "Error reading dimensions\n");
+        fclose(file);
+        return NULL;
+    }
+
+    // Allocate memory for bitmap
+    bitmap *bmp = ctor_bitmap(rows, cols);
+    if (bmp == NULL) {
+        return NULL;
+    }
+
+    for (int i = 0; i < cols; i++) {
+        for (int j = 0; j < rows; j++) {
+            int value;
+            fscanf(file, "%d", &value);
+            bmp->data[i * rows + j] = value;
+        }
+    }
+    return bmp;
 }
