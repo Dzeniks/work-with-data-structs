@@ -22,50 +22,6 @@ typedef struct {
     FILE *file;
 } config;
 
-// Constructor for bitmap structure
-bitmap *ctor_bitmap(int width, int height) {
-    if (width <= 0 || height <= 0) {
-        return NULL;
-    }
-
-    bitmap *bmp = malloc(sizeof(bitmap));
-    if (bmp == NULL) {
-        return NULL;
-    }
-
-    bool *data = malloc(width * height * sizeof(bool));
-    if (data == NULL) {
-        free(bmp);
-        return NULL;
-    }
-
-    bmp->rows = width;
-    bmp->cols = height;
-    bmp->data = data;
-
-    return bmp;
-}
-
-bool *get_item(bitmap *bmp, int x, int y) {
-    if (x < 0 || x >= bmp->rows || y < 0 || y >= bmp->cols) {
-        return NULL;
-    }
-    return &bmp->data[x * bmp->cols + y];
-}
-
-// Destructor for bitmap structure
-void dtor_bitmap(bitmap *bmp) {
-    if (bmp == NULL) {
-        return;
-    }
-
-    if (bmp->data != NULL) {
-        free(bmp->data);
-        bmp->data = NULL;
-    }
-    free(bmp);
-}
-
 const char *HELP_STRING =
         "Usage: [method] [filename]\n"
         "\n"
@@ -91,11 +47,16 @@ config parse_args(int argc, char *argv[]);
 
 bitmap *load_bitmap(FILE *file);
 
-result *find_hline(bitmap *bmp);
+result *find_hline(const bitmap *bmp);
 
-result *find_vline(bitmap *bmp);
+result *find_vline(const bitmap *bmp);
 
-result *find_square(bitmap *bmp);
+result *find_square(const bitmap *bmp);
+
+void dtor_bitmap(bitmap *bmp);
+
+bool *get_item(const bitmap *bmp, int x, int y);
+
 
 // Call the figsearch function to start the program
 int main(int argc, char *argv[]) {
@@ -112,7 +73,6 @@ void dtor_figsearch(bitmap *bmp, config cfg, result *result) {
 
 // run the figsearch function ("program") and return 0 if successful and 1 if not
 int figsearch(int argc, char *argv[]) {
-    printf("Hello, World!\n");
     const config cfg = parse_args(argc, argv);
     bitmap *bmp = load_bitmap(cfg.file);
     if (bmp == NULL) {
@@ -121,19 +81,7 @@ int figsearch(int argc, char *argv[]) {
         return 1;
     }
 
-    // TODO: Remove later prints only for debugging
-    // Print bitmap dimensions
-    printf("Bitmap dimensions: %d x %d\n", bmp->rows, bmp->cols);
-    // Print bitmap data
-    for (int row = 0; row < bmp->rows; row++) {
-        for (int col = 0; col < bmp->cols; col++) {
-            bool *item = get_item(bmp, row, col);
-            printf("%d ", *item);
-        }
-        printf("\n");
-    }
-    printf("\n");
-
+    // Method selection and execution
     result *result = NULL;
     if (cfg.hline) {
         result = find_hline(bmp);
@@ -149,8 +97,10 @@ int figsearch(int argc, char *argv[]) {
         return 1;
     }
 
+    // Print result
     printf("%d %d %d %d\n", result->start.x, result->start.y, result->end.x, result->end.y);
 
+    // Cleanup
     dtor_figsearch(bmp, cfg, result);
     return 0;
 }
@@ -203,6 +153,55 @@ config parse_args(int argc, char *argv[]) {
     return cfg;
 }
 
+
+// Constructor for bitmap structure
+bitmap *ctor_bitmap(int width, int height) {
+    // Check if dimensions are valid
+    if (width <= 0 || height <= 0) {
+        return NULL;
+    }
+
+    // Allocate memory for bitmap
+    bitmap *bmp = malloc(sizeof(bitmap));
+    if (bmp == NULL) {
+        return NULL;
+    }
+
+    // Allocate memory for bitmap data
+    bool *data = malloc(width * height * sizeof(bool));
+    if (data == NULL) {
+        free(bmp);
+        return NULL;
+    }
+
+    // Initialize bitmap structure with provided values
+    bmp->rows = width;
+    bmp->cols = height;
+    bmp->data = data;
+    return bmp;
+}
+
+// Get item from bitmap on specified coordinates
+bool *get_item(const bitmap *bmp, const int x, const int y) {
+    if (x < 0 || x >= bmp->rows || y < 0 || y >= bmp->cols) {
+        return NULL;
+    }
+    return &bmp->data[x * bmp->cols + y];
+}
+
+// Destructor for bitmap structure
+void dtor_bitmap(bitmap *bmp) {
+    if (bmp == NULL) {
+        return;
+    }
+
+    if (bmp->data != NULL) {
+        free(bmp->data);
+        bmp->data = NULL;
+    }
+    free(bmp);
+}
+
 // Read bitmap from file
 bitmap *load_bitmap(FILE *file) {
     // Read dimensions from first line
@@ -241,13 +240,14 @@ bitmap *load_bitmap(FILE *file) {
 }
 
 // Find the longest horizontal line in the bitmap
-result *find_hline(bitmap *bmp) {
+result *find_hline(const bitmap *bmp) {
     result *longest_row = malloc(sizeof(result));
     if (longest_row == NULL) {
         fprintf(stderr, "Error allocating memory\n");
         return NULL;
     }
 
+    // Go through all rows and find the longest row
     for (int row = 0; row < bmp->rows; row++) {
         int length = 0;
         for (int col = 0; col < bmp->cols; col++) {
@@ -271,7 +271,7 @@ result *find_hline(bitmap *bmp) {
 }
 
 // Find the longest vertical line in the bitmap
-result *find_vline(bitmap *bmp) {
+result *find_vline(const bitmap *bmp) {
     result *longest_column = malloc(sizeof(result));
     if (longest_column == NULL) {
         fprintf(stderr, "Error allocating memory\n");
@@ -279,6 +279,7 @@ result *find_vline(bitmap *bmp) {
         return NULL;
     }
 
+    // Go through all columns and find the longest column
     for (int col = 0; col < bmp->cols; col++) {
         int length = 0;
         for (int row = 0; row < bmp->rows; row++) {
@@ -301,11 +302,8 @@ result *find_vline(bitmap *bmp) {
     return longest_column;
 }
 
-void print_result(result *res) {
-    printf("%d %d %d %d\n", res->start.x, res->start.y, res->end.x, res->end.y);
-}
-
-bool check_if_row_is_ones(bitmap *bmp, int row, int col, int size) {
+// Check if specified row is all 1's from start column to size
+bool check_if_row_is_ones(const bitmap *bmp, const int row, const int col, const int size) {
     for (int i = 0; i < size; i++) {
         bool *item = get_item(bmp, row, col + i);
         if (item == NULL || !*item) {
@@ -315,7 +313,8 @@ bool check_if_row_is_ones(bitmap *bmp, int row, int col, int size) {
     return true;
 }
 
-bool check_if_col_is_ones(bitmap *bmp, int row, int col, int size) {
+// Check if specified column is all 1's from start row to size
+bool check_if_col_is_ones(const bitmap *bmp, const int row, const int col, const int size) {
     for (int i = 0; i < size; i++) {
         bool *item = get_item(bmp, row + i, col);
         if (item == NULL || !*item) {
@@ -325,9 +324,8 @@ bool check_if_col_is_ones(bitmap *bmp, int row, int col, int size) {
     return true;
 }
 
-result *find_square(bitmap *bmp) {
+result *find_square(const bitmap *bmp) {
     result *square = malloc(sizeof(result));
-
     // Set initial size to -1
     square->size = -1;
     for (int row = 0; row < bmp->rows; row++) {
