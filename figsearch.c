@@ -239,8 +239,16 @@ bitmap *load_bitmap(FILE *file) {
     bool is_bitmap_empty = false;
     for (int i = 0; i < cols; i++) {
         for (int j = 0; j < rows; j++) {
-            int value;
-            fscanf(file, "%d", &value);
+            char char_value;
+            int value = -1;
+            fscanf(file, " %c", &char_value);
+            if (char_value == '0' || char_value == '1') {
+                // Char to int
+                value = char_value - '0';
+            } else if (char_value != ' ') {
+                fprintf(stderr, "Error: Invalid value in bitmap\n");
+                return NULL;
+            }
             if (value == 1) {
                 is_bitmap_empty = true;
             }
