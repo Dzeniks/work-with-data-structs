@@ -373,6 +373,12 @@ result *find_square(const bitmap *bmp) {
             }
             // If start item is valid we found first item of possible square
             int size = 0;
+
+            // Check if can be found on current row bigger square
+            if ((row - bmp->rows < square->size)) {
+                continue;
+            }
+
             // While in bounds search for square
             while (row + size < bmp->rows && col + size < bmp->cols) {
                 bool *right = get_item(bmp, row + size, col);
