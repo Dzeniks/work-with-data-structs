@@ -27,13 +27,13 @@ def image_to_bitmap(width, height):
 # Example usage
 def main():
     # Replace 'path/to/your/image.jpg' with the actual path to your image
-    bitmap_output = image_to_bitmap(16000, 16000)
+    bitmap_output = image_to_bitmap(8000, 8000)
     
     # Print or save the bitmap
     # print(bitmap_output)
     
     # Save to a text file with same name as image
-    with open(f"gen_full_ones_16k.txt", 'w') as f:
+    with open(f"gen_full_ones_8k.txt", 'w') as f:
         f.write(bitmap_output)
 
 if __name__ == "__main__":

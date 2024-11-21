@@ -3,17 +3,18 @@
 #include <stdlib.h>
 #include <string.h>
 
+// Position in an array
 typedef struct {
-    int x, y;
-} vector;
+    unsigned x, y;
+} position;
 
 typedef struct {
-    vector start, end;
-    int size;
+    position start, end;
+    unsigned size;
 } result;
 
 typedef struct {
-    int rows, cols;
+    unsigned rows, cols;
     bool *data;
 } bitmap;
 
@@ -41,21 +42,21 @@ const char *HELP_STRING =
         "  hline img.txt    # Find horizontal lines in img.txt\n";
 
 // run the figsearch function ("program")
-int figsearch(int argc, char *argv[]);
+unsigned figsearch(unsigned argc, char *argv[]);
 
-config parse_args(int argc, char *argv[]);
+config parse_args(unsigned argc, char *argv[]);
 
 bitmap *load_bitmap(FILE *file);
 
-result *find_hline(const bitmap *bmp);
+void find_hline(const bitmap *bmp, result *longest_row);
 
-result *find_vline(const bitmap *bmp);
+void find_vline(const bitmap *bmp, result *longest_column);
 
-result *find_square(const bitmap *bmp);
+void find_square(const bitmap *bmp, result *square);
 
 void dtor_bitmap(bitmap *bmp);
 
-bool *get_item(const bitmap *bmp, int x, int y);
+bool *get_item(const bitmap *bmp, unsigned x, unsigned y);
 
 
 // Call the figsearch function to start the program
@@ -71,37 +72,42 @@ void dtor_figsearch(bitmap *bmp, config cfg, result *result) {
     free(result);
 }
 
-// run the figsearch function ("program") and return 0 if successful and 1 if not
-int figsearch(int argc, char *argv[]) {
-    const config cfg = parse_args(argc, argv);
-    bitmap *bmp = load_bitmap(cfg.file);
-    // If bitmap is not null and test is true print valid and return 0
+void test_bitmap(bitmap *bmp, config cfg) {
+    // If bitmap is loaded and test is true prunsigned valid and return 0
     if (bmp != NULL && cfg.test) {
         printf("Valid\n");
         dtor_figsearch(bmp, cfg, NULL);
-        return 0;
+        exit(EXIT_SUCCESS);
     }
-    // If bitmap is null and test is true print invalid and return 1
+    // If bitmap could not be loaded and test is true prunsigned invalid and return 1
     if (bmp == NULL && cfg.test) {
         printf("Invalid\n");
         dtor_figsearch(bmp, cfg, NULL);
-        return 1;
+        exit(EXIT_SUCCESS);
     }
-    // If bitmap is null and test is false print error and return 1
+    // If bitmap could not be loaded and test is false prunsigned error and return 1
     if (bmp == NULL) {
         fprintf(stderr, "Not found\n");
         dtor_figsearch(bmp, cfg, NULL);
-        return 1;
+        exit(EXIT_FAILURE);
     }
+}
+
+// run the figsearch function ("program") and return 0 if successful and 1 if not
+unsigned figsearch(unsigned argc, char *argv[]) {
+    const config cfg = parse_args(argc, argv);
+    bitmap *bmp = load_bitmap(cfg.file);
+    // Test if file is loaded succsesfly
+    test_bitmap(bmp, cfg);
 
     // Method selection and execution
-    result *result = NULL;
+    result *result = malloc(sizeof(result));
     if (cfg.hline) {
-        result = find_hline(bmp);
+        find_hline(bmp, result);
     } else if (cfg.vline) {
-        result = find_vline(bmp);
+        find_vline(bmp, result);
     } else if (cfg.square) {
-        result = find_square(bmp);
+        find_square(bmp, result);
     }
 
     if (result == NULL) {
@@ -110,7 +116,7 @@ int figsearch(int argc, char *argv[]) {
         return 1;
     }
 
-    // Print result
+    // Prunsigned result
     printf("%d %d %d %d\n", result->start.x, result->start.y, result->end.x, result->end.y);
 
     // Cleanup
@@ -118,10 +124,10 @@ int figsearch(int argc, char *argv[]) {
     return 0;
 }
 
-config parse_args(int argc, char *argv[]) {
+config parse_args(unsigned argc, char *argv[]) {
     config cfg = {false, false, false, false, NULL};
-    const int POS_METHOD = 1;
-    const int POS_FILE = 2;
+    const unsigned POS_METHOD = 1;
+    const unsigned POS_FILE = 2;
 
     // Check if some arguments are provided
     if (argc < 2) {
@@ -139,8 +145,7 @@ config parse_args(int argc, char *argv[]) {
 
     if (strcmp(argv[POS_METHOD], "test") == 0) {
         cfg.test = true;
-    }
-    else if (strcmp(argv[POS_METHOD], "hline") == 0) {
+    } else if (strcmp(argv[POS_METHOD], "hline") == 0) {
         cfg.hline = true;
     } else if (strcmp(argv[POS_METHOD], "vline") == 0) {
         cfg.vline = true;
@@ -170,9 +175,8 @@ config parse_args(int argc, char *argv[]) {
     return cfg;
 }
 
-
 // Constructor for bitmap structure
-bitmap *ctor_bitmap(int width, int height) {
+bitmap *ctor_bitmap(unsigned width, unsigned height) {
     // Check if dimensions are valid
     if (width <= 0 || height <= 0) {
         return NULL;
@@ -199,11 +203,11 @@ bitmap *ctor_bitmap(int width, int height) {
 }
 
 // Get item from bitmap on specified coordinates
-bool *get_item(const bitmap *bmp, const int x, const int y) {
-    if (x < 0 || x >= bmp->rows || y < 0 || y >= bmp->cols) {
+bool *get_item(const bitmap *bmp, const unsigned row, const unsigned col) {
+    if (row >= bmp->rows || col >= bmp->cols) {
         return NULL;
     }
-    return &bmp->data[x * bmp->cols + y];
+    return &bmp->data[row * bmp->cols + col];
 }
 
 // Destructor for bitmap structure
@@ -219,10 +223,10 @@ void dtor_bitmap(bitmap *bmp) {
     free(bmp);
 }
 
-// Read bitmap from file
+// Read bitmap from a file
 bitmap *load_bitmap(FILE *file) {
-    // Read dimensions from first line
-    int rows, cols;
+    // Read dimensions from the first line
+    unsigned rows, cols;
     if (fscanf(file, "%d %d", &rows, &cols) != 2) {
         fprintf(stderr, "Error reading dimensions\n");
         fclose(file);
@@ -235,12 +239,12 @@ bitmap *load_bitmap(FILE *file) {
         return NULL;
     }
 
-    // Read data from file
+    // Read data from a file
     bool is_bitmap_empty = false;
-    for (int i = 0; i < cols; i++) {
-        for (int j = 0; j < rows; j++) {
+    for (unsigned i = 0; i < cols; i++) {
+        for (unsigned j = 0; j < rows; j++) {
             char char_value;
-            int value = -1;
+            unsigned value = -1;
             fscanf(file, " %c", &char_value);
             if (char_value == '0' || char_value == '1') {
                 // Char to int
@@ -274,17 +278,16 @@ bitmap *load_bitmap(FILE *file) {
 }
 
 // Find the longest horizontal line in the bitmap
-result *find_hline(const bitmap *bmp) {
-    result *longest_row = malloc(sizeof(result));
+void find_hline(const bitmap *bmp, result *longest_row) {
     if (longest_row == NULL) {
-        fprintf(stderr, "Error allocating memory\n");
-        return NULL;
+        fprintf(stderr, "longest_row is not allocated\n");
+        return;
     }
 
     // Go through all rows and find the longest row
-    for (int row = 0; row < bmp->rows; row++) {
-        int length = 0;
-        for (int col = 0; col < bmp->cols; col++) {
+    for (unsigned row = 0; row < bmp->rows; row++) {
+        unsigned length = 0;
+        for (unsigned col = 0; col < bmp->cols; col++) {
             bool *item = get_item(bmp, row, col);
             if (item != NULL && *item) {
                 length++;
@@ -301,22 +304,23 @@ result *find_hline(const bitmap *bmp) {
             }
         }
     }
-    return longest_row;
 }
 
 // Find the longest vertical line in the bitmap
-result *find_vline(const bitmap *bmp) {
-    result *longest_column = malloc(sizeof(result));
+void find_vline(const bitmap *bmp, result *longest_column) {
     if (longest_column == NULL) {
-        fprintf(stderr, "Error allocating memory\n");
-        free(longest_column);
-        return NULL;
+        fprintf(stderr, "longest_column is not allocated\n");
+        return;
+    }
+    if (bmp == NULL) {
+        fprintf(stderr, "bmp is not allocated\n");
+        return;
     }
 
     // Go through all columns and find the longest column
-    for (int col = 0; col < bmp->cols; col++) {
-        int length = 0;
-        for (int row = 0; row < bmp->rows; row++) {
+    for (unsigned col = 0; col < bmp->cols; col++) {
+        unsigned length = 0;
+        for (unsigned row = 0; row < bmp->rows; row++) {
             bool *item = get_item(bmp, row, col);
             if (item != NULL && *item) {
                 length++;
@@ -333,12 +337,11 @@ result *find_vline(const bitmap *bmp) {
             }
         }
     }
-    return longest_column;
 }
 
 // Check if specified row is all 1's from start column to size
-bool check_if_row_is_ones(const bitmap *bmp, const int row, const int col, const int size) {
-    for (int i = 0; i < size; i++) {
+bool check_if_row_is_ones(const bitmap *bmp, const unsigned row, const unsigned col, const unsigned size) {
+    for (unsigned i = 0; i < size; i++) {
         bool *item = get_item(bmp, row, col + i);
         if (item == NULL || !*item) {
             return false;
@@ -348,8 +351,8 @@ bool check_if_row_is_ones(const bitmap *bmp, const int row, const int col, const
 }
 
 // Check if specified column is all 1's from start row to size
-bool check_if_col_is_ones(const bitmap *bmp, const int row, const int col, const int size) {
-    for (int i = 0; i < size; i++) {
+bool check_if_col_is_ones(const bitmap *bmp, const unsigned row, const unsigned col, const unsigned size) {
+    for (unsigned i = 0; i < size; i++) {
         bool *item = get_item(bmp, row + i, col);
         if (item == NULL || !*item) {
             return false;
@@ -358,12 +361,18 @@ bool check_if_col_is_ones(const bitmap *bmp, const int row, const int col, const
     return true;
 }
 
-result *find_square(const bitmap *bmp) {
-    result *square = malloc(sizeof(result));
-    // Set initial size to -1
-    square->size = -1;
-    for (int row = 0; row < bmp->rows; row++) {
-        for (int col = 0; col < bmp->cols; col++) {
+void find_square(const bitmap *bmp, result *square) {
+    // Handle invalid inputs
+    if (square == NULL) {
+        return;
+    }
+    if (bmp == NULL) {
+        return;
+    }
+    // Set initial size to 0
+    square->size = 0;
+    for (unsigned row = 0; row < bmp->rows; row++) {
+        for (unsigned col = 0; col < bmp->cols; col++) {
             // Get start item of possible square (Top left corner)
             bool *start_item = get_item(bmp, row, col);
 
@@ -372,18 +381,19 @@ result *find_square(const bitmap *bmp) {
                 continue;
             }
             // If start item is valid we found first item of possible square
-            int size = 0;
+            unsigned size = 1;
+            unsigned position = size - 1;
 
-            // Check if can be found on current row bigger square
-            if ((row - bmp->rows < square->size)) {
+            // Check if can be found on current row bigger square and handle unsign overflow
+            if (((bmp->rows - row) < (square->size))) {
                 continue;
             }
 
             // While in bounds search for square
-            while (row + size < bmp->rows && col + size < bmp->cols) {
-                bool *right = get_item(bmp, row + size, col);
-                bool *bottom = get_item(bmp, row, col + size);
-                bool *bottom_right = get_item(bmp, row + size, col + size);
+            while (row + position < bmp->rows && col + position < bmp->cols) {
+                bool *right = get_item(bmp, row + position, col);
+                bool *bottom = get_item(bmp, row, col + position);
+                bool *bottom_right = get_item(bmp, row + position, col + position);
 
                 // Check if all conditions are true to continue to search if not break
                 if (!(right != NULL && *right && bottom != NULL && *bottom)) {
@@ -392,20 +402,20 @@ result *find_square(const bitmap *bmp) {
 
                 // if found possible and bigger square - check right column and bottom row of possible square are valid
                 if (bottom_right != NULL && *bottom_right && size > square->size) {
-                    bool is_valid_right = check_if_col_is_ones(bmp, row, col + size, size + 1);
-                    bool is_valid_bottom = check_if_row_is_ones(bmp, row + size, col, size + 1);
-                    // If valid and size is bigger than current square save it and continue to search
+                    bool is_valid_right = check_if_col_is_ones(bmp, row, col + position, position + 1);
+                    bool is_valid_bottom = check_if_row_is_ones(bmp, row + position, col, position + 1);
+                    // If valid and size is bigger than current square, save it and continue to search
                     if (is_valid_right && is_valid_bottom && size > square->size) {
                         square->size = size;
                         square->start.x = row;
                         square->start.y = col;
-                        square->end.x = row + size;
-                        square->end.y = col + size;
+                        square->end.x = row + position;
+                        square->end.y = col + position;
                     }
                 }
                 size++;
+                position = size - 1;
             }
         }
     }
-    return square;
 }
