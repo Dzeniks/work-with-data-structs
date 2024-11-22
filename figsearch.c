@@ -13,7 +13,6 @@ struct SearchResult {
     struct {
         unsigned x, y;
     } start, end;
-
     unsigned size;
 };
 
@@ -354,7 +353,7 @@ void find_vline(Search_result *result, const Bitmap *bmp) {
 }
 
 bool is_row_ones(const Bitmap *bmp, unsigned row, unsigned col, unsigned size) {
-    for (unsigned i = 0; i < size; i++) {
+    for (unsigned i = 0; i <= size; i++) {
         if (!Bitmap_get_bit(bmp, row, col + i)) {
             return false;
         }
@@ -363,7 +362,7 @@ bool is_row_ones(const Bitmap *bmp, unsigned row, unsigned col, unsigned size) {
 }
 
 bool is_col_ones(const Bitmap *bmp, unsigned row, unsigned col, unsigned size) {
-    for (unsigned i = 0; i < size; i++) {
+    for (unsigned i = 0; i <= size; i++) {
         if (!Bitmap_get_bit(bmp, row + i, col)) {
             return false;
         }
@@ -375,33 +374,31 @@ void find_square(Search_result *result, const Bitmap *bmp) {
     if (!validate_inputs(result, bmp)) return;
     for (unsigned row = 0; row < bmp->rows; row++) {
         for (unsigned col = 0; col < bmp->cols; col++) {
-
             if (!Bitmap_get_bit(bmp, row, col)) {
                 continue;
             }
 
-            unsigned max_size = (bmp->rows - row < bmp->cols - col)
-                                    ? bmp->rows - row
-                                    : bmp->cols - col;
+            unsigned max_size = (bmp->rows - row < bmp->cols - col ? bmp->rows - row : bmp->cols - col);
+            if (max_size < result->size) {
+                continue;
+            }
 
-            // Start from the biggest square load from result->size
-            unsigned start_size = result->size + 1;
+            for (unsigned size = 1; size <= max_size; ++size) {
+                unsigned offset = size - 1;
 
-            for (unsigned size = start_size; size <= max_size; size++) {
-                unsigned position = size - 1;
+                bool right = Bitmap_get_bit(bmp, row, col + offset);
+                bool bottom = Bitmap_get_bit(bmp, row + offset, col);
+                bool bottom_right = Bitmap_get_bit(bmp, row + offset, col + offset);
 
-                bool right = Bitmap_get_bit(bmp, row + position, col);
-                bool bottom = Bitmap_get_bit(bmp, row, col + position);
-                bool bottom_right = Bitmap_get_bit(bmp, row + position, col + position);
+                // Check if the square is valid
                 if (!right || !bottom || !bottom_right) {
-                    continue;
+                    break;
                 }
 
-                if (is_row_ones(bmp, row + size - 1, col, size) &&
-                    is_col_ones(bmp, row, col + size - 1, size) &&
-                    size > result->size) {
+                if (is_row_ones(bmp, row + offset, col, offset) &&
+                    is_col_ones(bmp, row, col + offset, offset) && size > result->size) {
                     search_result_set(result, size, row, col,
-                        row + size - 1, col + size - 1);
+                        row + offset, col + offset);
                 }
             }
         }
