@@ -71,8 +71,8 @@ void find_vline(Search_result *result, const Bitmap *bmp);
 void find_square(Search_result *result, const Bitmap *bmp);
 Search_result *search_result_create();
 void search_result_set(Search_result *result, unsigned size,
-                       unsigned start_x, unsigned start_y,
-                       unsigned end_x, unsigned end_y);
+                       unsigned start_col, unsigned start_row,
+                       unsigned end_col, unsigned end_row);
 void Search_result_destroy(Search_result *result);
 bool validate_search_input(const Bitmap *bmp, const Search_result *result);
 
@@ -137,9 +137,11 @@ int figsearch(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
+    // Print the result y = row, x = col
     printf("%u %u %u %u\n",
-           result->start.x, result->start.y,
-           result->end.x, result->end.y);
+           result->start.y, result->start.x,
+           result->end.y, result->end.x);
+
 
     Search_result_destroy(result);
     Bitmap_destroy(bmp);
@@ -162,14 +164,14 @@ Search_result *search_result_create() {
 
 // Search result "methods" setter
 void search_result_set(Search_result *result, unsigned size,
-                       unsigned start_x, unsigned start_y,
-                       unsigned end_x, unsigned end_y) {
+                       unsigned start_col, unsigned start_row,
+                       unsigned end_col, unsigned end_row) {
     if (result) {
         result->size = size;
-        result->start.x = start_x;
-        result->start.y = start_y;
-        result->end.x = end_x;
-        result->end.y = end_y;
+        result->start.x = start_col;
+        result->start.y = start_row;
+        result->end.x = end_col;
+        result->end.y = end_row;
     }
 }
 
@@ -275,19 +277,24 @@ void Bitmap_set_bit(Bitmap *bmp, unsigned row, unsigned col, bool value) {
 
 Bitmap *Bitmap_load_from_file(FILE *file) {
     unsigned rows, cols;
-    if (fscanf(file, "%u %u", &rows, &cols) != 2) return NULL;
+    // int rows_int, cols_int;
+    if (fscanf(file, "%d %d", &cols, &rows) != 2) return NULL;
+    // if (rows_int <= 0 || cols_int <= 0) return NULL;
 
 
     Bitmap *bmp = bitmap_create(rows, cols);
     if (!bmp) { return NULL; }
 
-    // Skip newline
-    fgetc(file);
     bool has_set_pixels = false;
-    for (unsigned row = 0; row < rows; row++) {
+    unsigned row = 0;
+    unsigned loaded_cols = 0;
+    for (; row < rows; row++) {
         for (unsigned col = 0; col < cols; col++) {
             char c;
-            fscanf(file, "%c", &c);
+            c = getc(file);
+            if (c == EOF) {
+                Bitmap_destroy(bmp); return NULL;
+            }
             if (c == ' ' || c == '\n') {
                 col--; continue;
             }
@@ -298,11 +305,17 @@ Bitmap *Bitmap_load_from_file(FILE *file) {
             if (value) has_set_pixels = true;
             Bitmap_set_bit(bmp, row, col, value);
         }
-        // Skip newline
-        fgetc(file);
+        loaded_cols += cols;
     }
 
-    if (!has_set_pixels || fgetc(file) != EOF) {
+    if (row == rows && loaded_cols == cols && !has_set_pixels) {
+        Bitmap_destroy(bmp);
+        return NULL;
+    }
+
+    // print_bitmap(bmp);
+
+    if (!has_set_pixels) {
         Bitmap_destroy(bmp);
         return NULL;
     }
@@ -324,8 +337,8 @@ void find_hline(Search_result *result, const Bitmap *bmp) {
             if (Bitmap_get_bit(bmp, row, col)) {
                 length++;
                 if (length > result->size) {
-                    search_result_set(result, length, row, col - length + 1,
-                                      row, col);
+                    search_result_set(result, length, col - length + 1, row,
+                                      col, row);
                 }
             } else {
                 length = 0;
@@ -335,15 +348,15 @@ void find_hline(Search_result *result, const Bitmap *bmp) {
 }
 
 void find_vline(Search_result *result, const Bitmap *bmp) {
-    if (validate_inputs(result, bmp)) return;
+    if (!validate_inputs(result, bmp)) return;
     for (unsigned col = 0; col < bmp->cols; col++) {
         unsigned length = 0;
         for (unsigned row = 0; row < bmp->rows; row++) {
             if (Bitmap_get_bit(bmp, row, col)) {
                 length++;
                 if (length > result->size) {
-                    search_result_set(result, length, row - length + 1,
-                                      col, row, col);
+                    search_result_set(result, length, col, row - length + 1,
+                        col, row);
                 }
             } else {
                 length = 0;
@@ -391,14 +404,15 @@ void find_square(Search_result *result, const Bitmap *bmp) {
                 bool bottom_right = Bitmap_get_bit(bmp, row + offset, col + offset);
 
                 // Check if the square is valid
-                if (!right || !bottom || !bottom_right) {
+                if (!right || !bottom) {
                     break;
                 }
 
                 if (is_row_ones(bmp, row + offset, col, offset) &&
-                    is_col_ones(bmp, row, col + offset, offset) && size > result->size) {
-                    search_result_set(result, size, row, col,
-                        row + offset, col + offset);
+                    is_col_ones(bmp, row, col + offset, offset) && size > result->size &&
+                    bottom_right) {
+                    search_result_set(result, size,col , row,
+                         col + offset, row + offset);
                 }
             }
         }
