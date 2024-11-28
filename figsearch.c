@@ -267,8 +267,8 @@ void Config_destroy(Config *cfg) {
 // Bitmap "methods"
 bool Bitmap_get_bit(const Bitmap *bmp, unsigned row, unsigned col) {
     if (!bmp || row >= bmp->rows || col >= bmp->cols) {
-        // exit(EXIT_FAILURE);
-        return false;
+        fprintf(stderr, "Error: Invalid bitmap access\n");
+        exit(EXIT_FAILURE);
     }
     return bmp->data[row * bmp->cols + col];
 }
