@@ -80,6 +80,13 @@ int main(int argc, char *argv[]) {
     return figsearch(argc, argv);
 }
 
+void figsearch_destroy(Bitmap *bmp,Config *cfg, Search_result *result) {
+    // Free memory
+    Bitmap_destroy(bmp);
+    Config_destroy(cfg);
+    Search_result_destroy(result);
+}
+
 int figsearch(int argc, char *argv[]) {
     Config *cfg = Config_create(argc, argv);
     if (!cfg) {
@@ -90,8 +97,7 @@ int figsearch(int argc, char *argv[]) {
     Search_result *result = search_result_create();
     if (!result) {
         fprintf(stderr, "Error: Memory allocation failed\n");
-        Bitmap_destroy(bmp);
-        Config_destroy(cfg);
+        figsearch_destroy(bmp, cfg, result);
         return EXIT_FAILURE;
     }
 
@@ -101,16 +107,13 @@ int figsearch(int argc, char *argv[]) {
         } else {
             fprintf(stderr, "Valid\n");
         }
-        Bitmap_destroy(bmp);
-        Search_result_destroy(result);
-        Config_destroy(cfg);
+        figsearch_destroy(bmp, cfg, result);
 
         return EXIT_SUCCESS;
     }
     if (!bmp) {
-        fprintf(stderr, "Error: Invalid bitmap file\n");
-        Search_result_destroy(result);
-        Config_destroy(cfg);
+        fprintf(stderr, "Invalid\n");
+        figsearch_destroy(bmp, cfg, result);
         return EXIT_FAILURE;
     }
 
@@ -177,7 +180,7 @@ void search_result_set(Search_result *result, unsigned size,
 
 Bitmap *bitmap_create(unsigned rows, unsigned cols) {
     if (rows == 0 || cols == 0) {
-        fprintf(stderr, "Output bitmap must have positive dimensions\n");
+        // fprintf(stderr, "Output bitmap must have positive dimensions\n");
         return NULL;
     }
 
@@ -264,6 +267,7 @@ void Config_destroy(Config *cfg) {
 // Bitmap "methods"
 bool Bitmap_get_bit(const Bitmap *bmp, unsigned row, unsigned col) {
     if (!bmp || row >= bmp->rows || col >= bmp->cols) {
+        // exit(EXIT_FAILURE);
         return false;
     }
     return bmp->data[row * bmp->cols + col];
@@ -277,9 +281,7 @@ void Bitmap_set_bit(Bitmap *bmp, unsigned row, unsigned col, bool value) {
 
 Bitmap *Bitmap_load_from_file(FILE *file) {
     unsigned rows, cols;
-    // int rows_int, cols_int;
-    if (fscanf(file, "%d %d", &cols, &rows) != 2) return NULL;
-    // if (rows_int <= 0 || cols_int <= 0) return NULL;
+    if (fscanf(file, "%u %u", &rows, &cols) != 2) return NULL;
 
 
     Bitmap *bmp = bitmap_create(rows, cols);
@@ -312,8 +314,6 @@ Bitmap *Bitmap_load_from_file(FILE *file) {
         Bitmap_destroy(bmp);
         return NULL;
     }
-
-    // print_bitmap(bmp);
 
     if (!has_set_pixels) {
         Bitmap_destroy(bmp);
