@@ -376,6 +376,10 @@ bool is_col_ones(const Bitmap *bmp, unsigned row, unsigned col, unsigned size) {
     return true;
 }
 
+unsigned min(unsigned a, unsigned b) {
+    return a < b ? a : b;
+}
+
 // Finds the largest square in the bitmap.
 void find_square(Search_result *result, const Bitmap *bmp) {
     if (!validate_inputs(result, bmp)) return;
@@ -384,8 +388,7 @@ void find_square(Search_result *result, const Bitmap *bmp) {
             if (!Bitmap_get_bit(bmp, row, col)) continue;
 
             // Check if the square can be big enough
-            unsigned max_size = (bmp->rows - row < bmp->cols - col ?
-                bmp->rows - row: bmp->cols - col);
+            unsigned max_size = min(bmp->rows - row, bmp->cols - col);
 
             if (max_size < result->size) continue;
 
